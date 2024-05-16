@@ -64,6 +64,8 @@ def get_video_ids(youtube, channel_id):
 
 #Function to get the Video Details
 import datetime
+import isodate
+
 def get_Video_Details(youtube, video_ids):
     Video_data = []
 
@@ -78,6 +80,11 @@ def get_Video_Details(youtube, video_ids):
             publish_date_str = item['snippet']['publishedAt']
             publish_date = datetime.datetime.strptime(publish_date_str, '%Y-%m-%dT%H:%M:%SZ')
             formatted_publish_date = publish_date.strftime('%Y-%m-%d %H:%M:%S')
+            
+            iso_duration_str = item['contentDetails']['duration']
+            formatted_duration = isodate.parse_duration(iso_duration_str)
+
+
 
 
             data = {
@@ -89,7 +96,7 @@ def get_Video_Details(youtube, video_ids):
                 'Thumbnail': item['snippet']['thumbnails']['default']['url'],
                 'Description': item['snippet'].get('description'),
                 'Publishdate': formatted_publish_date,
-                'Duration': item['contentDetails']['duration'],
+                'Duration': formatted_duration,
                 'Views': item['statistics'].get('viewCount'),
                 'Likes': item['statistics'].get('likeCount'),
                 'Comments': item['statistics'].get('commentCount'),
@@ -241,7 +248,7 @@ def create_tables(conn):
         Thumbnail TEXT,
         Description TEXT,
         Publishdate DATETIME,
-        Duration VARCHAR(255),
+        Duration TIME,
         Views INT,
         Likes INT,
         Comments INT,
@@ -629,7 +636,7 @@ elif question == "8.What are the names of all the channels that have published v
 
 elif question == "9.What is the average duration of all videos in each channel, and what are their corresponding channel names?" :
         query = """
-                SELECT c.Channel_Name, AVG(v.Duration) AS Avg_Duration
+                SELECT c.Channel_Name, SEC_TO_TIME(AVG(TIME_TO_SEC(v.Duration))) AS Avg_Duration
                 FROM channel_data c
                 JOIN video_data v ON c.Channel_Id = v.Channel_Id
                 GROUP BY c.Channel_Name;
